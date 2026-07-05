@@ -1,0 +1,84 @@
+name: Production CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Terraform fmt
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform plan
+        working-directory: terraform
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/tfplan
+
+      - name: Manual approval
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "Manual approval is required before apply"
+
+      - name: Terraform apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: terraform
+        run: terraform apply -auto-approve -input=false tfplan
+
+      - name: Deploy backend
+        run: |
+          echo "Deploying backend"
+          ssh -o StrictHostKeyChecking=no ec2-user@$(terraform -chdir=terraform output -raw bastion_public_ip) "sudo mkdir -p /home/ec2-user/app"
+
+      - name: Run database migration
+        run: echo "Run database migration here"
+
+      - name: Deploy frontend
+        run: echo "Deploy frontend here"
+
+      - name: Restart services
+        run: echo "Restart services here"
+
+      - name: Health check
+        run: echo "Health check here"
+
+      - name: Slack notification
+        if: always()
+        run: echo "Send Slack notification here"
