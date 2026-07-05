@@ -1,0 +1,24 @@
+aws_region            = "ap-south-1"
+environment           = "production"
+owner                 = "devops-team"
+application_name      = "fullstack-app"
+project_name          = "terraform-aws-production"
+
+vpc_cidr               = "10.0.0.0/16"
+public_subnet_cidrs    = ["10.0.1.0/24", "10.0.2.0/24"]
+private_app_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24"]
+private_db_subnet_cidrs  = ["10.0.21.0/24", "10.0.22.0/24"]
+availability_zones     = ["ap-south-1a", "ap-south-1b"]
+office_cidr            = "203.0.113.0/24"
+
+key_name               = "prod-keypair"
+instance_type          = "t3.small"
+ami_id                 = "ami-0f5ee92e2d63afcfa"
+
+alb_certificate_arn    = ""
+db_name                = "appdb"
+db_username            = "admin"
+db_password            = "ChangeMe123!"
+
+github_repo_url        = "https://github.com/example/production-app.git"
+github_repo_branch    = "main"
